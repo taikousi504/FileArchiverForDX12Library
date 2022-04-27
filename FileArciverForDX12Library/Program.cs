@@ -66,10 +66,6 @@ namespace FileArciverForDX12Library
 
             //ファイル出力準備
             string dstDir = args[0].Substring(0, args[0].LastIndexOf("\\"));
-
-            ////ファイル存在確認
-            //if (File.Exists(dstDir + "\\") + )
-
             StreamWriter sw = new StreamWriter(dstDir + "\\" + dstName);
 
             //テスト出力
