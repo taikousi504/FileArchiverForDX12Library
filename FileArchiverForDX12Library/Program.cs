@@ -18,7 +18,7 @@ namespace FileArchiverForDX12Library
             //出力名
             string dstName;
             //ファイルサイズコンテナ
-            List<int> dataSize = new List<int>();
+            List<long> dataSize = new List<long>();
 
             //実行ファイルに直接D&Dされていなかった場合
             if (args.Length == 0)
@@ -65,10 +65,10 @@ namespace FileArchiverForDX12Library
 
             //ファイル出力準備
             string dstDir = args[0].Substring(0, args[0].LastIndexOf("\\"));
-            StreamWriter sw = new StreamWriter(dstDir + "\\" + dstName);
+            BinaryWriter sw = new BinaryWriter(new FileStream(dstDir + "\\" + dstName, FileMode.OpenOrCreate));
 
             //ファイルを一つ一つ書き出し
-            string output = "";
+            List<byte> output = new List<byte>();
             string pwd = Environment.CurrentDirectory;
 
             //データ部
@@ -82,19 +82,17 @@ namespace FileArchiverForDX12Library
                     Console.Write(v2 + "を書き込みます...");
 
                     //まずは全データ結合
-                    StreamReader sr = new StreamReader(v2);
-
-                    string addStr = sr.ReadToEnd();
+                    BinaryReader br = new BinaryReader(new FileStream(v2, FileMode.Open));
 
                     //データ追加
-                    output += addStr;
+                    for (int i = 0; i < br.BaseStream.Length; i++)
+                    {
+                        output.Add(br.ReadByte());
+                    }
 
-                    //データ開始位置追加
-                    Encoding e = sr.CurrentEncoding;
+                    dataSize.Add(br.BaseStream.Length);
 
-                    dataSize.Add(e.GetByteCount(addStr));
-
-                    sr.Close();
+                    br.Close();
 
                     Console.WriteLine("完了");
                 }
@@ -102,7 +100,7 @@ namespace FileArchiverForDX12Library
 
             string header = "";
             int index = 0;
-            int startPos = 0;
+            long startPos = 0;
             //ヘッダー部
             foreach (var v1 in files)
             {
@@ -123,7 +121,7 @@ namespace FileArchiverForDX12Library
 
             //さいごにヘッダーサイズと識別子を挿入
             const int IDENTIFIER_SIZE = 16;
-            string headerSize = (sw.Encoding.GetByteCount(header) + IDENTIFIER_SIZE).ToString();
+            string headerSize = (Encoding.UTF8.GetByteCount(header) + IDENTIFIER_SIZE).ToString();
 
             while(headerSize.Length < 12)
             {
@@ -139,8 +137,8 @@ namespace FileArchiverForDX12Library
             Environment.CurrentDirectory = pwd;
 
             //書き出し
-            sw.Write(header);
-            sw.Write(output);
+            sw.Write(header.ToCharArray());
+            sw.Write(output.ToArray());
 
             sw.Close();
             paths.Clear();
